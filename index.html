@@ -1,162 +1,132 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Ordem RPG</title>
-
-<style>
-body{
-    margin:0;
-    font-family: Arial, sans-serif;
-    background:#0f0f14;
-    color:white;
-}
-
-header{
-    background:#1a1a24;
-    padding:20px;
-    text-align:center;
-    font-size:24px;
-    font-weight:bold;
-    border-bottom:2px solid #2a2a3a;
-}
-
-.container{
-    padding:20px;
-    max-width:900px;
-    margin:auto;
-}
-
-.card{
-    background:#1c1c28;
-    padding:20px;
-    margin-bottom:20px;
-    border-radius:10px;
-    border:1px solid #2a2a3a;
-}
-
-input, select{
-    width:100%;
-    padding:8px;
-    margin-top:5px;
-    margin-bottom:15px;
-    background:#12121a;
-    border:1px solid #333;
-    color:white;
-    border-radius:5px;
-}
-
-button{
-    padding:10px 15px;
-    background:#6a00ff;
-    border:none;
-    color:white;
-    border-radius:5px;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#5200cc;
-}
-
-.lista{
-    margin-top:20px;
-}
-
-.personagem{
-    background:#151520;
-    padding:10px;
-    margin-bottom:10px;
-    border-radius:5px;
-    border:1px solid #333;
-}
-</style>
-</head>
-
-<body>
-
-<header>
-Sistema Ordem RPG
-</header>
-
-<div class="container">
-
-<div class="card">
-<h2>Criar Personagem</h2>
-
-<label>Nome</label>
-<input type="text" id="nome">
-
-<label>NEX</label>
-<input type="number" id="nex">
-
-<label>Classe</label>
-<select id="classe">
-<option>Combatente</option>
-<option>Ocultista</option>
-<option>Especialista</option>
-</select>
-
-<button onclick="salvar()">Salvar</button>
-</div>
-
-<div class="card">
-<h2>Personagens Salvos</h2>
-<div class="lista" id="lista"></div>
-</div>
-
-</div>
-
 <script>
+const mapaPericias = {
+"Acrobacia":"AGI",
+"Adestramento":"PRE",
+"Artes":"PRE",
+"Atletismo":"FOR",
+"Atualidades":"INT",
+"Ciencias":"INT",
+"Crime":"AGI",
+"Diplomacia":"PRE",
+"Enganacao":"PRE",
+"Fortitude":"VIG",
+"Furtividade":"AGI",
+"Iniciativa":"AGI",
+"Intimidacao":"PRE",
+"Intuicao":"PRE",
+"Investigacao":"INT",
+"Luta":"FOR",
+"Medicina":"INT",
+"Ocultismo":"INT",
+"Percepcao":"PRE",
+"Pilotagem":"AGI",
+"Pontaria":"AGI",
+"Reflexos":"AGI",
+"Religiao":"PRE",
+"Sobrevivencia":"INT",
+"Tecnologia":"INT",
+"Vontade":"PRE"
+};
+
+let editando = null;
+
 function salvar(){
     const nome = document.getElementById("nome").value;
-    const nex = document.getElementById("nex").value;
-    const classe = document.getElementById("classe").value;
+    const FOR = Number(document.getElementById("for").value);
+    const AGI = Number(document.getElementById("agi").value);
+    const INT = Number(document.getElementById("int").value);
+    const PRE = Number(document.getElementById("pre").value);
+    const VIG = Number(document.getElementById("vig").value);
 
-    if(!nome) return alert("Coloque um nome!");
+    const NEX = 10;
 
-    const personagem = {nome, nex, classe};
+    if(!nome) return alert("Nome obrigatório");
 
-    let personagens = JSON.parse(localStorage.getItem("personagens")) || [];
-    personagens.push(personagem);
+    const personagem = {
+        nome, FOR, AGI, INT, PRE, VIG, NEX,
+        PV: 20 + VIG*5,
+        PE: 10 + PRE*5
+    };
 
-    localStorage.setItem("personagens", JSON.stringify(personagens));
+    let lista = JSON.parse(localStorage.getItem("ordem")) || [];
 
-    document.getElementById("nome").value="";
-    document.getElementById("nex").value="";
+    if(editando !== null){
+        lista[editando] = personagem;
+        editando = null;
+    } else {
+        lista.push(personagem);
+    }
 
+    localStorage.setItem("ordem", JSON.stringify(lista));
+    limpar();
     carregar();
 }
 
+function calcularPericias(p){
+    let html = "";
+    for(let nome in mapaPericias){
+        const atributo = mapaPericias[nome];
+        const bonus = p[atributo] + Math.floor(p.NEX/10);
+        html += `${nome}: +${bonus}<br>`;
+    }
+    return html;
+}
+
 function carregar(){
-    const lista = document.getElementById("lista");
-    lista.innerHTML="";
+    const listaDiv = document.getElementById("lista");
+    listaDiv.innerHTML = "";
 
-    let personagens = JSON.parse(localStorage.getItem("personagens")) || [];
+    let lista = JSON.parse(localStorage.getItem("ordem")) || [];
 
-    personagens.forEach((p,i)=>{
-        lista.innerHTML += `
+    lista.forEach((p,i)=>{
+        listaDiv.innerHTML += `
         <div class="personagem">
-            <strong>${p.nome}</strong><br>
-            NEX: ${p.nex}%<br>
-            Classe: ${p.classe}
-            <br><br>
-            <button onclick="remover(${i})">Excluir</button>
+        <strong>${p.nome}</strong><br>
+        PV: ${p.PV} | PE: ${p.PE}<br>
+        NEX: ${p.NEX}%<br><br>
+        FOR ${p.FOR} | AGI ${p.AGI} | INT ${p.INT} | PRE ${p.PRE} | VIG ${p.VIG}
+        <br><br>
+        <details>
+        <summary>Ver Perícias</summary>
+        ${calcularPericias(p)}
+        </details>
+        <br>
+        <button onclick="editar(${i})">Editar</button>
+        <button onclick="remover(${i})">Excluir</button>
         </div>
         `;
     });
 }
 
-function remover(index){
-    let personagens = JSON.parse(localStorage.getItem("personagens")) || [];
-    personagens.splice(index,1);
-    localStorage.setItem("personagens", JSON.stringify(personagens));
+function editar(i){
+    let lista = JSON.parse(localStorage.getItem("ordem"));
+    const p = lista[i];
+
+    document.getElementById("nome").value = p.nome;
+    document.getElementById("for").value = p.FOR;
+    document.getElementById("agi").value = p.AGI;
+    document.getElementById("int").value = p.INT;
+    document.getElementById("pre").value = p.PRE;
+    document.getElementById("vig").value = p.VIG;
+
+    editando = i;
+}
+
+function remover(i){
+    let lista = JSON.parse(localStorage.getItem("ordem"));
+    lista.splice(i,1);
+    localStorage.setItem("ordem", JSON.stringify(lista));
     carregar();
+}
+
+function limpar(){
+    document.getElementById("nome").value="";
+    document.getElementById("for").value="";
+    document.getElementById("agi").value="";
+    document.getElementById("int").value="";
+    document.getElementById("pre").value="";
+    document.getElementById("vig").value="";
 }
 
 carregar();
 </script>
-
-</body>
-</html>
