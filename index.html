@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Ordem RPG</title>
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#0f0f14;
+    color:white;
+}
+
+header{
+    background:#1a1a24;
+    padding:20px;
+    text-align:center;
+    font-size:24px;
+    font-weight:bold;
+    border-bottom:2px solid #2a2a3a;
+}
+
+.container{
+    padding:20px;
+    max-width:900px;
+    margin:auto;
+}
+
+.card{
+    background:#1c1c28;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    border:1px solid #2a2a3a;
+}
+
+input, select{
+    width:100%;
+    padding:8px;
+    margin-top:5px;
+    margin-bottom:15px;
+    background:#12121a;
+    border:1px solid #333;
+    color:white;
+    border-radius:5px;
+}
+
+button{
+    padding:10px 15px;
+    background:#6a00ff;
+    border:none;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#5200cc;
+}
+
+.lista{
+    margin-top:20px;
+}
+
+.personagem{
+    background:#151520;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:5px;
+    border:1px solid #333;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+Sistema Ordem RPG
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>Criar Personagem</h2>
+
+<label>Nome</label>
+<input type="text" id="nome">
+
+<label>NEX</label>
+<input type="number" id="nex">
+
+<label>Classe</label>
+<select id="classe">
+<option>Combatente</option>
+<option>Ocultista</option>
+<option>Especialista</option>
+</select>
+
+<button onclick="salvar()">Salvar</button>
+</div>
+
+<div class="card">
+<h2>Personagens Salvos</h2>
+<div class="lista" id="lista"></div>
+</div>
+
+</div>
+
+<script>
+function salvar(){
+    const nome = document.getElementById("nome").value;
+    const nex = document.getElementById("nex").value;
+    const classe = document.getElementById("classe").value;
+
+    if(!nome) return alert("Coloque um nome!");
+
+    const personagem = {nome, nex, classe};
+
+    let personagens = JSON.parse(localStorage.getItem("personagens")) || [];
+    personagens.push(personagem);
+
+    localStorage.setItem("personagens", JSON.stringify(personagens));
+
+    document.getElementById("nome").value="";
+    document.getElementById("nex").value="";
+
+    carregar();
+}
+
+function carregar(){
+    const lista = document.getElementById("lista");
+    lista.innerHTML="";
+
+    let personagens = JSON.parse(localStorage.getItem("personagens")) || [];
+
+    personagens.forEach((p,i)=>{
+        lista.innerHTML += `
+        <div class="personagem">
+            <strong>${p.nome}</strong><br>
+            NEX: ${p.nex}%<br>
+            Classe: ${p.classe}
+            <br><br>
+            <button onclick="remover(${i})">Excluir</button>
+        </div>
+        `;
+    });
+}
+
+function remover(index){
+    let personagens = JSON.parse(localStorage.getItem("personagens")) || [];
+    personagens.splice(index,1);
+    localStorage.setItem("personagens", JSON.stringify(personagens));
+    carregar();
+}
+
+carregar();
+</script>
+
+</body>
+</html>
